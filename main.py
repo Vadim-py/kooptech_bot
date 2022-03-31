@@ -37,5 +37,16 @@ def callback_stud(call):
     keyboard_prev.add(key_prev_zvon)
     bot.send_message(call.message.chat.id, msg, reply_markup=keyboard_prev)
 
+  elif call.data == 'zvon':
+    rasp_zvon = open('rasp.jpg', 'rb')
+    bot.send_photo(call.message.chat.id, rasp_zvon)
+
+    
+def zvon(call):
+  if call.data == 'zvon':
+    bot.send_message(call.message.chat.id, 'test')
+    rasp_zvon = open('rasp.jpg', 'rb')
+    bot.send_photo(call.message.from_user.id, rasp_zvon)
+
 ui.Menu()
 bot.polling(none_stop=True, interval=0)
