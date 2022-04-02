@@ -2,7 +2,9 @@ import telebot
 from telebot import types
 import sqlite3
 from src import ui
-from src import parser
+import requests
+from bs4 import BeautifulSoup
+
 
 bot = telebot.TeleBot('5200870392:AAEhHttXnxkLF2RXwPzdUWPCTjyFBPUi4yI')
 
@@ -14,6 +16,24 @@ keyboard.add(key_prev)
 
 conn = sqlite3.connect('users.db', check_same_thread=False)
 cursor = conn.cursor()
+
+
+url = 'https://koopteh.onego.ru/student/lessons/'
+res = requests.get(url)
+bs = BeautifulSoup(res.text, 'lxml')
+line = bs.find("table", class_ = 'styled').find('tbody').find_all('a')
+for row in line:
+    # col = row.find_all('a').get('href')
+    row.get('href')
+
+url2 = row.get("href") + 'export?format=csv'
+respon2e = urllib.request.urlopen(url2)
+with io.TextIOWrapper(respon2e, encoding='utf-8') as f:
+    reader = csv.reader(f)
+
+    for ro in reader:
+        print(ro)
+
 
 @bot.message_handler(content_types=['text'])
 def msg(message):
@@ -47,5 +67,9 @@ def callback_stud(call):
     keyboard_prev.add(key_prev_rasp)
     keyboard_prev.add(key_prev_zvon)
     bot.send_message(call.message.chat.id, msg, reply_markup=keyboard_prev)
+
+  elif call.data == 'rasp':
+    bot.send_message(call.message.chat.id, f'Расписание: {row.get("href")}')
+
 ui.Menu()
 bot.polling(none_stop=True, interval=0)
