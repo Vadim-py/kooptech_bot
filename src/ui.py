@@ -11,6 +11,6 @@ def Menu():
    \ \_\ \_\ \____/\ \____/\ \ ,__/\ \__\ \____\ \____\\ \_\ \_\
     \/_/\/_/\/___/  \/___/  \ \ \/  \/__/\/____/\/____/ \/_/\/_/
                            '''
-  msg =  Fore.RED + '\n \nBot started'
+  msg =  Fore.GREEN + '\n \nBot started \n'
   print(menu, msg)
 

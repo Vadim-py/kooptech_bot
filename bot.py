@@ -4,9 +4,15 @@ import sqlite3
 from src import ui
 import requests
 from bs4 import BeautifulSoup
+from colorama import Fore
 
 
-bot = telebot.TeleBot('5200870392:AAEhHttXnxkLF2RXwPzdUWPCTjyFBPUi4yI')
+TOKEN_TXT_FILE = open('API_KEY.txt', 'r')
+TOKEN = TOKEN_TXT_FILE.read()
+
+bot = telebot.TeleBot(TOKEN)
+
+ui.Menu()
 
 keyboard = types.InlineKeyboardMarkup()
 key_stud = types.InlineKeyboardButton(text='Студент 👨‍🎓', callback_data='student')
@@ -14,32 +20,45 @@ key_prev = types.InlineKeyboardButton(text='Преподователь 👨‍�
 keyboard.add(key_stud)
 keyboard.add(key_prev)
 
-conn = sqlite3.connect('users.db', check_same_thread=False)
-cursor = conn.cursor()
 
+try:
+  conn = sqlite3.connect('users.db', check_same_thread=False)
+  cursor = conn.cursor()
 
-url = 'https://koopteh.onego.ru/student/lessons/'
-res = requests.get(url)
-bs = BeautifulSoup(res.text, 'lxml')
-line = bs.find("table", class_ = 'styled').find('tbody').find_all('a')
-for row in line:
-    # col = row.find_all('a').get('href')
-    row.get('href')
+  def db(user_Id: int, username: str):
+    cursor.execute('INSERT INTO users (user_Id, username) VALUES (?, ?)', (user_Id, username))
+    conn.commit()
+except Exception as e:
+  print(Fore.RED + f'ошибка подключения к базе данных {e}')
 
-url2 = row.get("href") + 'export?format=csv'
-respon2e = urllib.request.urlopen(url2)
-with io.TextIOWrapper(respon2e, encoding='utf-8') as f:
-    reader = csv.reader(f)
+try:
+  url = 'https://koopteh.onego.ru/student/lessons/'
+  res = requests.get(url)
+  bs = BeautifulSoup(res.text, 'lxml')
+  line = bs.find("table", class_ = 'styled').find('tbody').find_all('a')
+  for row in line:
+      # col = row.find_all('a').get('href')
+      row.get('href')
 
-    for ro in reader:
-        print(ro)
+  url2 = row.get("href") + 'export?format=csv'
+  respon2e = urllib.request.urlopen(url2)
+  with io.TextIOWrapper(respon2e, encoding='utf-8') as f:
+      reader = csv.reader(f)
+      for ro in reader:
+          print(ro)
+except Exception as e:
+  print(Fore.RED + f'ошибка парсера: {e}')
 
-
-@bot.message_handler(content_types=['text'])
+@bot.message_handler(commands=['start'])
 def msg(message):
   bot.send_message(message.from_user.id,
                    f'👋 Привет {message.from_user.first_name}!\nЭтот бот поможет тебе с расписанием кооперативного техникума')
   bot.send_message(message.from_user.id, text='Кто вы?', reply_markup=keyboard)
+
+  user_id = message.from_user.id
+  username = message.from_user.username
+  db(user_Id=user_id, username=username)
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_stud(call):
@@ -69,7 +88,9 @@ def callback_stud(call):
     bot.send_message(call.message.chat.id, msg, reply_markup=keyboard_prev)
 
   elif call.data == 'rasp':
-    bot.send_message(call.message.chat.id, f'Расписание: {row.get("href")}')
+    try:
+      bot.send_message(call.message.chat.id, f'Расписание: {row.get("href")}')
+    except Exception as e:
+      print(Fore.RED + f'ошибка получения ссылки на расписание {e}')
 
-ui.Menu()
 bot.polling(none_stop=True, interval=0)
